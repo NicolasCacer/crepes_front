@@ -2,14 +2,26 @@
 
 import { useState } from "react";
 import Swal from "sweetalert2";
+import Link from "next/link";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default function Registros() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const COLUMN_COUNT = 10; // 10 columnas de tiempos
 
   const [rows, setRows] = useState([
-    { id: 1, times: Array(COLUMN_COUNT).fill(null), observacion: "" },
-    { id: 2, times: Array(COLUMN_COUNT).fill(null), observacion: "" },
+    {
+      id: 1,
+      descripcion: "",
+      times: Array(COLUMN_COUNT).fill(null),
+      observacion: "",
+    },
+    {
+      id: 2,
+      descripcion: "",
+      times: Array(COLUMN_COUNT).fill(null),
+      observacion: "",
+    },
   ]);
 
   const handleSetTime = (rowIndex, timeIndex) => {
@@ -32,12 +44,19 @@ export default function Registros() {
     setRows(newRows);
   };
 
+  const handleDescriptionChange = (rowIndex, value) => {
+    const newRows = [...rows];
+    newRows[rowIndex].descripcion = value;
+    setRows(newRows);
+  };
+
   const handleSubmit = async (rowIndex) => {
     try {
       const response = await fetch(`${API_URL}/registros`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          descripcion: rows[rowIndex].descripcion,
           times: rows[rowIndex].times,
           observacion: rows[rowIndex].observacion,
         }),
@@ -46,6 +65,7 @@ export default function Registros() {
       if (response.ok) {
         // Limpiar los campos después del envío
         const newRows = [...rows];
+        newRows[rowIndex].descripcion = "";
         newRows[rowIndex].times = Array(COLUMN_COUNT).fill(null);
         newRows[rowIndex].observacion = "";
         setRows(newRows);
@@ -72,6 +92,7 @@ export default function Registros() {
       ...rows,
       {
         id: rows.length + 1,
+        descripcion: "",
         times: Array(COLUMN_COUNT).fill(null),
         observacion: "",
       },
@@ -83,11 +104,17 @@ export default function Registros() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6">
+      <Link href="/">
+        <button className="bg-gray-500 px-3 py-1 mb-4 rounded-lg hover:opacity-80 flex justify-between items-center gap-2">
+          <FaArrowLeft /> Volver
+        </button>
+      </Link>
       <h1 className="text-xl font-bold mb-4">Registro de Tiempos</h1>
       <table className="w-full border-collapse border border-gray-300">
         <thead>
           <tr>
+            <th className="border border-gray-300 p-2">Descripción</th>
             {Array.from({ length: COLUMN_COUNT }).map((_, index) => (
               <th key={index} className="border border-gray-300 p-2">
                 Campo {index + 1}
@@ -100,6 +127,17 @@ export default function Registros() {
         <tbody>
           {rows.map((row, rowIndex) => (
             <tr key={row.id} className="text-center">
+              <td className="border border-gray-300 p-2">
+                <input
+                  type="text"
+                  value={row.descripcion}
+                  onChange={(e) =>
+                    handleDescriptionChange(rowIndex, e.target.value)
+                  }
+                  className="w-full px-2 py-1 border border-gray-300 rounded"
+                  placeholder="Descripción..."
+                />
+              </td>
               {row.times.map((time, timeIndex) => (
                 <td
                   key={timeIndex}
@@ -122,13 +160,13 @@ export default function Registros() {
               </td>
               <td className="border border-gray-300 p-2">
                 <button
-                  className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
+                  className="bg-blue-500 text-white px-3 py-1 rounded mr-2 hover:opacity-80"
                   onClick={() => handleSubmit(rowIndex)}
                 >
                   Enviar
                 </button>
                 <button
-                  className="bg-red-500 text-white px-3 py-1 rounded"
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:opacity-80"
                   onClick={() => handleDeleteRow(rowIndex)}
                 >
                   Eliminar
@@ -140,7 +178,7 @@ export default function Registros() {
       </table>
 
       <button
-        className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
+        className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:opacity-80"
         onClick={handleAddRow}
       >
         Agregar Fila

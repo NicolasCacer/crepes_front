@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default function Registros() {
-  const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [registros, setRegistros] = useState([]);
 
@@ -47,7 +47,12 @@ export default function Registros() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6">
+      <Link href="/">
+        <button className="bg-gray-500 px-3 py-1 mb-4 rounded-lg hover:opacity-80 flex justify-between items-center gap-2">
+          <FaArrowLeft /> Volver
+        </button>
+      </Link>
       <h1 className="text-xl font-bold mb-4">Lista de Registros</h1>
       <table className="w-full border-collapse border border-gray-300">
         <thead>
