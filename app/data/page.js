@@ -1,27 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { io } from "socket.io-client";
 import Swal from "sweetalert2";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 
+const socket = io(process.env.NEXT_PUBLIC_API_URL);
+
 export default function Registros() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [registros, setRegistros] = useState([]);
 
   useEffect(() => {
-    fetchRegistros();
-  }, []);
+    // Request persisted registros from the server on mount.
+    socket.emit("get_persisted_registros");
 
-  const fetchRegistros = async () => {
-    try {
-      const response = await fetch(`${API_URL}/registros`);
-      const data = await response.json();
+    // Listen for updates.
+    socket.on("update_persisted_registros", (data) => {
       setRegistros(data);
-    } catch (error) {
-      console.error("Error fetching records:", error);
-    }
-  };
+    });
+
+    // Clean up on unmount.
+    return () => {
+      socket.off("update_persisted_registros");
+    };
+  }, []);
 
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
@@ -34,15 +37,9 @@ export default function Registros() {
     });
 
     if (confirm.isConfirmed) {
-      try {
-        await fetch(`${API_URL}/registros/${id}`, {
-          method: "DELETE",
-        });
-        setRegistros(registros.filter((registro) => registro.id !== id));
-        Swal.fire("Eliminado", "Registro eliminado con éxito", "success");
-      } catch (error) {
-        console.error("Error deleting record:", error);
-      }
+      // Emit socket event to delete the record from Firestore.
+      socket.emit("eliminar_registro_persistido", id);
+      Swal.fire("Eliminado", "Registro eliminado con éxito", "success");
     }
   };
 
