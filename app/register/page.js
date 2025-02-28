@@ -83,6 +83,18 @@ export default function Registros() {
 
   const handleSubmit = (rowIndex) => {
     const row = rows[rowIndex];
+
+    // Validate that all time fields are filled before sending
+    const allTimesFilled = row.times.every((time) => time !== null);
+    if (!allTimesFilled) {
+      Swal.fire({
+        icon: "warning",
+        title: "Faltan tiempos",
+        text: "Por favor, asegúrate de que todos los tiempos estén registrados.",
+      });
+      return;
+    }
+
     // Emit an event to persist (or "guardar") the current row to Firestore
     socket.emit("guardar_registro", {
       id: row.id,
@@ -92,6 +104,7 @@ export default function Registros() {
         observacion: row.observacion,
       },
     });
+
     // Clear the row fields after sending
     const newRows = [...rows];
     newRows[rowIndex] = {
@@ -101,6 +114,7 @@ export default function Registros() {
       observacion: "",
     };
     setRows(newRows);
+
     Swal.fire({
       position: "top-end",
       icon: "success",
@@ -126,10 +140,22 @@ export default function Registros() {
   };
 
   const handleDeleteRow = (rowIndex) => {
-    const rowToDelete = rows[rowIndex];
-    const updatedRows = rows.filter((_, index) => index !== rowIndex);
-    setRows(updatedRows);
-    socket.emit("eliminar_registro", rowToDelete.id);
+    Swal.fire({
+      title: "¿Eliminar fila?",
+      text: "Esta acción eliminará la fila de forma permanente.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const rowToDelete = rows[rowIndex];
+        const updatedRows = rows.filter((_, index) => index !== rowIndex);
+        setRows(updatedRows);
+        socket.emit("eliminar_registro", rowToDelete.id);
+        Swal.fire("Eliminado", "La fila ha sido eliminada", "success");
+      }
+    });
   };
 
   return (
