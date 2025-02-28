@@ -1,28 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { io } from "socket.io-client";
 import Swal from "sweetalert2";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 
-export default function Registros() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const COLUMN_COUNT = 10; // 10 columnas de tiempos
+const socket = io(process.env.NEXT_PUBLIC_API_URL);
 
+export default function Registros() {
+  const COLUMN_COUNT = 10;
+
+  // Initially, we create two blank rows (with temporary unique ids)
   const [rows, setRows] = useState([
     {
-      id: 1,
+      id: Date.now(), // temporary unique id
       descripcion: "",
       times: Array(COLUMN_COUNT).fill(null),
       observacion: "",
     },
     {
-      id: 2,
+      id: Date.now() + 1,
       descripcion: "",
       times: Array(COLUMN_COUNT).fill(null),
       observacion: "",
     },
   ]);
+
+  useEffect(() => {
+    // Request the current records from the server on mount
+    socket.emit("get_registros");
+
+    // Listen for the full updated rows list
+    socket.on("update_registros", (data) => {
+      setRows(data);
+    });
+
+    // Clean up on unmount
+    return () => {
+      socket.off("update_registros");
+    };
+  }, []);
 
   const handleSetTime = (rowIndex, timeIndex) => {
     const newRows = [...rows];
@@ -32,75 +50,86 @@ export default function Registros() {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        fractionalSecondDigits: 3, // Agrega milisegundos
+        fractionalSecondDigits: 3,
       }
     );
     setRows(newRows);
+    // Broadcast the updated times for this row
+    socket.emit("actualizar_registro", {
+      id: newRows[rowIndex].id,
+      data: { times: newRows[rowIndex].times },
+    });
   };
 
   const handleObservationChange = (rowIndex, value) => {
     const newRows = [...rows];
     newRows[rowIndex].observacion = value;
     setRows(newRows);
+    socket.emit("actualizar_registro", {
+      id: newRows[rowIndex].id,
+      data: { observacion: value },
+    });
   };
 
   const handleDescriptionChange = (rowIndex, value) => {
     const newRows = [...rows];
     newRows[rowIndex].descripcion = value;
     setRows(newRows);
+    socket.emit("actualizar_registro", {
+      id: newRows[rowIndex].id,
+      data: { descripcion: value },
+    });
   };
 
-  const handleSubmit = async (rowIndex) => {
-    try {
-      const response = await fetch(`${API_URL}/registros`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          descripcion: rows[rowIndex].descripcion,
-          times: rows[rowIndex].times,
-          observacion: rows[rowIndex].observacion,
-        }),
-      });
-
-      if (response.ok) {
-        // Limpiar los campos después del envío
-        const newRows = [...rows];
-        newRows[rowIndex].descripcion = "";
-        newRows[rowIndex].times = Array(COLUMN_COUNT).fill(null);
-        newRows[rowIndex].observacion = "";
-        setRows(newRows);
-
-        // Mostrar mensaje de éxito con SweetAlert2
-        Swal.fire({
-          position: "top-end",
-          icon: "success",
-          title: "Registro enviado",
-          showConfirmButton: false,
-          timer: 1000, // Alerta corta
-        });
-      } else {
-        Swal.fire("Error", "No se pudo enviar el registro", "error");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      Swal.fire("Error", "Hubo un problema con la solicitud", "error");
-    }
+  const handleSubmit = (rowIndex) => {
+    const row = rows[rowIndex];
+    // Emit an event to persist (or "guardar") the current row to Firestore
+    socket.emit("guardar_registro", {
+      id: row.id,
+      data: {
+        descripcion: row.descripcion,
+        times: row.times,
+        observacion: row.observacion,
+      },
+    });
+    // Clear the row fields after sending
+    const newRows = [...rows];
+    newRows[rowIndex] = {
+      ...newRows[rowIndex],
+      descripcion: "",
+      times: Array(COLUMN_COUNT).fill(null),
+      observacion: "",
+    };
+    setRows(newRows);
+    Swal.fire({
+      position: "top-end",
+      icon: "success",
+      title: "Registro enviado",
+      showConfirmButton: false,
+      timer: 1000,
+    });
   };
 
   const handleAddRow = () => {
-    setRows([
-      ...rows,
-      {
-        id: rows.length + 1,
-        descripcion: "",
-        times: Array(COLUMN_COUNT).fill(null),
-        observacion: "",
-      },
-    ]);
+    // Create a new row with a unique id
+    const newRow = {
+      id: Date.now(),
+      descripcion: "",
+      times: Array(COLUMN_COUNT).fill(null),
+      observacion: "",
+    };
+    // Optimistically update local state
+    const updatedRows = [...rows, newRow];
+    setRows(updatedRows);
+    // Emit event so all clients add this new row
+    socket.emit("nuevo_registro", newRow);
   };
 
   const handleDeleteRow = (rowIndex) => {
-    setRows(rows.filter((_, index) => index !== rowIndex));
+    const rowToDelete = rows[rowIndex];
+    const updatedRows = rows.filter((_, index) => index !== rowIndex);
+    setRows(updatedRows);
+    socket.emit("eliminar_registro", rowToDelete.id);
   };
 
   return (
@@ -176,7 +205,6 @@ export default function Registros() {
           ))}
         </tbody>
       </table>
-
       <button
         className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:opacity-80"
         onClick={handleAddRow}
