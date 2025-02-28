@@ -173,7 +173,7 @@ export default function Registros() {
                   className="border border-gray-300 p-2 cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSetTime(rowIndex, timeIndex)}
                 >
-                  {time || "---"}
+                  {time || "-"}
                 </td>
               ))}
               <td className="border border-gray-300 p-2">
