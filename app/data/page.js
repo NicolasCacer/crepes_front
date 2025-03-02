@@ -9,13 +9,13 @@ import { FaArrowLeft } from "react-icons/fa";
 const socket = io(process.env.NEXT_PUBLIC_API_URL);
 
 // Define the order and labels for the main time fields to display
+// "entregaPedido" has been removed from this array.
 const tiemposOrder = [
   { key: "arribo", label: "Arribo" },
   { key: "inicioAtencionCaja", label: "Inicio Atención" },
   { key: "inicioProcesoPago", label: "Inicio Pago" },
   { key: "finPago", label: "Fin Pago" },
   { key: "llamado", label: "Llamado turno" },
-  { key: "entregaPedido", label: "Entrega" },
   { key: "ocuparMesa", label: "Ocupar Mesa" },
   { key: "liberacionMesa", label: "Liberar Mesa" },
 ];
@@ -110,7 +110,7 @@ export default function Registros() {
               <th className="border border-gray-300 p-2">Turno</th>
               <th className="border border-gray-300 p-2">Productos</th>
 
-              {/* NEW column for the 5 "pedido" timers */}
+              {/* Column for the 5 "pedido" timers */}
               <th className="border border-gray-300 p-2">Pedido</th>
 
               <th className="border border-gray-300 p-2">Consumo</th>

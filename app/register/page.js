@@ -49,7 +49,7 @@ function createBlankRow() {
       inicioProcesoPago: null,
       finPago: null,
       llamado: null,
-      entregaPedido: null,
+      // entregaPedido removed
       ocuparMesa: null,
       liberacionMesa: null,
       pedido: {
@@ -214,13 +214,14 @@ export default function Registros() {
     const row = rows[rowIndex];
 
     // 1) Validate required times
+    //    "entregaPedido" is removed from here
     const requiredTimes = [
       "arribo",
       "inicioAtencionCaja",
       "inicioProcesoPago",
       "finPago",
       "llamado",
-      "entregaPedido",
+      // "entregaPedido" removed
     ];
     const tiemposCompletos = requiredTimes.every(
       (campo) => row.tiempos[campo] !== null
@@ -398,17 +399,22 @@ export default function Registros() {
             {/* Pedido (5 timers, stacked) */}
             <th className="border border-gray-300 p-2">Pedido</th>
 
-            <th className="border border-gray-300 p-2">Entrega</th>
+            {/* "Entrega" column removed */}
+            {/* Ocupar Mesa */}
             <th className="border border-gray-300 p-2">Ocupar Mesa</th>
+            {/* Liberar Mesa */}
             <th className="border border-gray-300 p-2">Liberar Mesa</th>
+            {/* Consumo */}
             <th className="border border-gray-300 p-2">Consumo</th>
+            {/* Observación */}
             <th className="border border-gray-300 p-2">Observación</th>
+            {/* Acciones */}
             <th className="border border-gray-300 p-2">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => {
-            // Only keep the 5 known keys for "pedido" (removes old data like "pedido1")
+            // Only keep the 5 known keys for "pedido"
             const pedidoTimers = row.tiempos.pedido || {
               helados: null,
               copas: null,
@@ -502,7 +508,7 @@ export default function Registros() {
                   {row.tiempos.llamado || "-"}
                 </td>
 
-                {/* Productos - 5 inputs stacked */}
+                {/* Productos */}
                 <td className="border border-gray-300 p-2">
                   <div className="flex flex-col gap-1">
                     {/* Helados */}
@@ -588,7 +594,7 @@ export default function Registros() {
                   </div>
                 </td>
 
-                {/* Pedido - 5 timers stacked (same keys as "productos") */}
+                {/* Pedido - 5 timers */}
                 <td className="border border-gray-300 p-2 min-w-[110px]">
                   <div className="flex flex-col justify-even gap-1">
                     {["helados", "copas", "gofres", "bebidas", "crepes"].map(
@@ -607,13 +613,7 @@ export default function Registros() {
                   </div>
                 </td>
 
-                {/* Entrega */}
-                <td
-                  className="border border-gray-300 p-2 cursor-pointer hover:bg-gray-100 min-w-[110px]"
-                  onClick={() => handleSetTime(rowIndex, "entregaPedido")}
-                >
-                  {row.tiempos.entregaPedido || "-"}
-                </td>
+                {/* "Entrega" column removed */}
 
                 {/* Ocupar Mesa */}
                 <td
